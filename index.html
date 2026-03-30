@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FacturaAI — Contabilidad Inteligente</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #0e0f11; --surface: #16181c; --surface2: #1e2026; --border: #2a2d35;
+  --accent: #e8c547; --accent2: #4ecdc4; --text: #f0efe8;
+  --text-muted: #7a7d87; --text-dim: #3e4149; --success: #5cb85c; --danger: #e05555;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Instrument Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(232,197,71,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(232,197,71,0.03) 1px, transparent 1px);
+  background-size: 40px 40px; pointer-events: none; z-index: 0;
+}
+.app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; }
+.logo-mark { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--accent); }
+.logo-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-left: 10px; }
+.header-stats { display: flex; gap: 24px; }
+.stat-num { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+/* API KEY */
+.apikey-bar {
+  background: var(--surface); border: 1px solid var(--accent); border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.apikey-bar.ok { border-color: var(--success); }
+.apikey-bar input {
+  flex: 1; min-width: 220px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 7px; padding: 8px 11px; font-size: 13px; color: var(--text);
+  font-family: 'DM Mono', monospace;
+}
+.apikey-bar input:focus { outline: none; border-color: var(--accent); }
+.btn-sm {
+  padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.15s;
+}
+.btn-yellow { background: var(--accent); color: #0e0f11; }
+.btn-yellow:hover { background: #f0cf5a; }
+.btn-ghost { background: none; border: 1px solid var(--border) !important; color: var(--text-muted); border: none; }
+.btn-ghost:hover { border-color: var(--danger) !important; color: var(--danger); }
+.key-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.key-badge.ok { background: rgba(92,184,92,0.15); color: var(--success); }
+.key-badge.no { background: rgba(232,197,71,0.15); color: var(--accent); }
+
+/* TABS */
+.tabs { display: flex; gap: 2px; background: var(--surface); border-radius: 10px; padding: 4px; margin-bottom: 28px; border: 1px solid var(--border); width: fit-content; }
+.tab { padding: 7px 18px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text-muted); transition: all 0.2s; }
+.tab.active { background: var(--accent); color: #0e0f11; }
+
+.panel { display: none; } .panel.active { display: block; }
+
+/* UPLOAD */
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: 14px; padding: 56px 32px;
+  text-align: center; cursor: pointer; transition: all 0.3s; background: var(--surface); position: relative; overflow: hidden;
+}
+.drop-zone::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(232,197,71,0.05) 0%, transparent 70%); pointer-events: none; }
+.drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--surface2); }
+.drop-title { font-family: 'DM Serif Display', serif; font-size: 20px; margin: 12px 0 6px; }
+.drop-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+.fmt-badges { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.fmt { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 5px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); letter-spacing: 1px; }
+input[type=file] { display: none; }
+
+.queue-header { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 14px; }
+.queue-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.btn-process {
+  background: var(--accent); color: #0e0f11; border: none; padding: 9px 22px;
+  border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.2s;
+}
+.btn-process:hover { background: #f0cf5a; transform: translateY(-1px); }
+.btn-process:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.progress-bar { height: 2px; background: var(--border); border-radius: 1px; margin-bottom: 12px; overflow: hidden; display: none; }
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+.queue-list { display: flex; flex-direction: column; gap: 7px; }
+.q-item { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 11px 14px; display: flex; align-items: center; gap: 10px; }
+.q-item.processing { border-color: var(--accent); }
+.q-item.done { border-color: var(--success); }
+.q-item.error { border-color: var(--danger); }
+.q-name { font-size: 13px; flex: 1; }
+.q-size { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.q-status { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
+.s-waiting { background: var(--surface2); color: var(--text-muted); }
+.s-processing { background: rgba(232,197,71,0.15); color: var(--accent); }
+.s-done { background: rgba(92,184,92,0.15); color: var(--success); }
+.s-error { background: rgba(224,85,85,0.15); color: var(--danger); }
+.btn-rm { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 15px; padding: 1px 5px; }
+.btn-rm:hover { color: var(--danger); }
+
+/* TABLE */
+.tbl-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+.tbl-title { font-family: 'DM Serif Display', serif; font-size: 20px; }
+.export-group { display: flex; gap: 7px; }
+.btn-export { border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+.btn-export:hover { border-color: var(--accent); color: var(--accent); }
+.btn-export.gs:hover { border-color: var(--accent2); color: var(--accent2); }
+.tbl-wrap { overflow-x: auto; border-radius: 11px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { background: var(--surface2); }
+th { padding: 11px 13px; text-align: left; font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+td { padding: 10px 13px; vertical-align: middle; }
+td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
+.td-actions { display: flex; gap: 5px; }
+.btn-edit, .btn-del { background: none; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; padding: 3px 7px; font-size: 12px; color: var(--text-muted); transition: all 0.2s; }
+.btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+.btn-del:hover { border-color: var(--danger); color: var(--danger); }
+.empty { text-align: center; padding: 60px; color: var(--text-muted); font-size: 13px; }
+
+/* MODAL */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; animation: up 0.22s ease; }
+@keyframes up { from { transform: translateY(16px); opacity: 0; } }
+.modal-head { padding: 22px 22px 0; display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.modal-head h3 { font-family: 'DM Serif Display', serif; font-size: 18px; }
+.btn-x { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+.modal-body { padding: 0 22px; }
+.fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ff { display: flex; flex-direction: column; gap: 4px; }
+.ff.full { grid-column: 1/-1; }
+.fl { font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; }
+.fi { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 11px; font-size: 13px; color: var(--text); font-family: 'Instrument Sans', sans-serif; width: 100%; }
+.fi:focus { outline: none; border-color: var(--accent); }
+.modal-foot { padding: 16px 22px 22px; display: flex; gap: 7px; justify-content: flex-end; border-top: 1px solid var(--border); margin-top: 18px; }
+.btn-cancel { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 18px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.btn-save { background: var(--accent); color: #0e0f11; border: none; padding: 8px 22px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-save:hover { background: #f0cf5a; }
+
+/* SHEETS MODAL */
+.sheets-info { background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 14px; margin-bottom: 14px; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.sheets-info strong { color: var(--accent2); }
+.url-row { display: flex; gap: 7px; margin-top: 10px; }
+.url-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 11px; font-size: 12px; color: var(--text); font-family: 'DM Mono', monospace; }
+.url-input:focus { outline: none; border-color: var(--accent2); }
+.btn-gs { background: var(--accent2); color: #0e0f11; border: none; padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 28px; right: 28px; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 12px 18px; font-size: 13px; z-index: 200; animation: up 0.25s ease; max-width: 320px; }
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--danger); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #0e0f11; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.badge { font-family: 'DM Mono', monospace; font-size: 10px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 20px; color: var(--text-muted); margin-left: 6px; }
+
+/* LOG */
+.log-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-top: 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); max-height: 120px; overflow-y: auto; display: none; }
+.log-box.visible { display: block; }
+.log-line.ok { color: var(--success); }
+.log-line.err { color: var(--danger); }
+.log-line.info { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <span class="logo-mark">FacturaAI</span>
+      <span class="logo-sub">Contabilidad inteligente</span>
+    </div>
+    <div class="header-stats">
+      <div class="stat" style="text-align:right">
+        <div class="stat-num" id="s-total">0</div>
+        <div class="stat-label">Facturas</div>
+      </div>
+      <div class="stat" style="text-align:right">
+        <div class="stat-num" id="s-base">0,00 €</div>
+        <div class="stat-label">Base total</div>
+      </div>
+      <div class="stat" style="text-align:right">
+        <div class="stat-num" id="s-iva">0,00 €</div>
+        <div class="stat-label">IVA total</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- API KEY BAR -->
+  <div class="apikey-bar" id="key-bar">
+    <span>🔑</span>
+    <div style="flex:1;min-width:140px">
+      <div style="font-size:13px;font-weight:600">API Key de Anthropic</div>
+      <div style="font-size:11px;color:var(--text-muted)">Se guarda solo en tu navegador</div>
+    </div>
+    <input type="password" id="key-input" placeholder="sk-ant-api03-...">
+    <button class="btn-sm btn-yellow" onclick="saveKey()">Guardar</button>
+    <button class="btn-sm btn-ghost" id="btn-clear" onclick="clearKey()" style="display:none;border:1px solid var(--border)">✕ Borrar</button>
+    <span class="key-badge no" id="key-badge">SIN CONFIGURAR</span>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="goTab('upload')">📤 Subir facturas</button>
+    <button class="tab" onclick="goTab('facturas')">📋 Facturas <span class="badge" id="badge">0</span></button>
+  </div>
+
+  <!-- UPLOAD PANEL -->
+  <div class="panel active" id="p-upload">
+    <div class="drop-zone" id="dropzone" onclick="document.getElementById('fi').click()">
+      <div style="font-size:44px">📄</div>
+      <div class="drop-title">Arrastra aquí tus facturas</div>
+      <div class="drop-sub">o haz clic para seleccionar archivos</div>
+      <div class="fmt-badges">
+        <span class="fmt">PDF</span><span class="fmt">JPG/PNG</span><span class="fmt">DOCX</span><span class="fmt">WEBP</span>
+      </div>
+    </div>
+    <input type="file" id="fi" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
+
+    <div id="q-section" style="display:none">
+      <div class="queue-header">
+        <span class="queue-title">Cola (<span id="q-count">0</span> archivos)</span>
+        <button class="btn-process" id="btn-proc" onclick="processAll()">⚡ Procesar todo</button>
+      </div>
+      <div class="progress-bar" id="pb"><div class="progress-fill" id="pf" style="width:0%"></div></div>
+      <div class="queue-list" id="q-list"></div>
+      <div class="log-box" id="log-box"></div>
+    </div>
+  </div>
+
+  <!-- FACTURAS PANEL -->
+  <div class="panel" id="p-facturas">
+    <div class="tbl-header">
+      <span class="tbl-title">Registro de facturas</span>
+      <div class="export-group">
+        <button class="btn-export" onclick="exportXLSX()">📊 Excel (.xlsx)</button>
+        <button class="btn-export gs" onclick="openSheets()">🟢 Google Sheets</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Nº Factura</th><th>Fecha</th><th>Proveedor</th><th>CIF</th>
+          <th>Dirección</th><th>Base Imp.</th><th>IVA %</th><th>IVA €</th>
+          <th>Total</th><th>Cta. a3</th><th></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="m-edit" style="display:none" onclick="if(event.target.id==='m-edit')closeEdit()">
+  <div class="modal">
+    <div class="modal-head"><h3>Editar factura</h3><button class="btn-x" onclick="closeEdit()">×</button></div>
+    <div class="modal-body">
+      <div class="fgrid">
+        <div class="ff"><label class="fl">Nº Factura</label><input class="fi" id="e-num" type="text"></div>
+        <div class="ff"><label class="fl">Fecha</label><input class="fi" id="e-fecha" type="date"></div>
+        <div class="ff full"><label class="fl">Proveedor</label><input class="fi" id="e-prov" type="text"></div>
+        <div class="ff"><label class="fl">CIF / NIF</label><input class="fi" id="e-cif" type="text"></div>
+        <div class="ff full"><label class="fl">Dirección</label><input class="fi" id="e-dir" type="text"></div>
+        <div class="ff"><label class="fl">Base Imponible €</label><input class="fi" id="e-base" type="number" step="0.01"></div>
+        <div class="ff"><label class="fl">% IVA</label><input class="fi" id="e-ivap" type="number" step="1"></div>
+        <div class="ff"><label class="fl">IVA €</label><input class="fi" id="e-ivae" type="number" step="0.01"></div>
+        <div class="ff"><label class="fl">Total €</label><input class="fi" id="e-tot" type="number" step="0.01"></div>
+        <div class="ff full"><label class="fl">Cuenta contable / Código a3</label><input class="fi" id="e-cta" type="text"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeEdit()">Cancelar</button>
+      <button class="btn-save" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHEETS MODAL -->
+<div class="overlay" id="m-sheets" style="display:none" onclick="if(event.target.id==='m-sheets')closeSh()">
+  <div class="modal">
+    <div class="modal-head"><h3>Google Sheets</h3><button class="btn-x" onclick="closeSh()">×</button></div>
+    <div class="modal-body">
+      <div class="sheets-info">
+        Pulsa <strong>Copiar datos TSV</strong>, luego abre tu Google Sheet y pega con <strong>Ctrl+Shift+V</strong> para importar como tabla.
+        <div class="url-row">
+          <input class="url-input" id="sh-url" placeholder="https://docs.google.com/spreadsheets/d/...">
+          <button class="btn-gs" onclick="window.open(document.getElementById('sh-url').value,'_blank')">Abrir →</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeSh()">Cerrar</button>
+      <button class="btn-save" style="background:var(--accent2)" onclick="copyTSV()">📋 Copiar datos TSV</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let queue = [], facturas = [], editIdx = null;
+
+// ===== API KEY =====
+function loadKey() {
+  const k = localStorage.getItem('fai_key') || '';
+  if (k) {
+    document.getElementById('key-input').value = k;
+    setKeyOK();
+  }
+}
+function saveKey() {
+  const v = document.getElementById('key-input').value.trim();
+  if (!v.startsWith('sk-ant-')) { toast('⚠️ La clave debe empezar por sk-ant-...', 'error'); return; }
+  localStorage.setItem('fai_key', v);
+  setKeyOK();
+  toast('🔑 API Key guardada', 'success');
+}
+function clearKey() {
+  localStorage.removeItem('fai_key');
+  document.getElementById('key-input').value = '';
+  document.getElementById('key-badge').textContent = 'SIN CONFIGURAR';
+  document.getElementById('key-badge').className = 'key-badge no';
+  document.getElementById('key-bar').classList.remove('ok');
+  document.getElementById('btn-clear').style.display = 'none';
+}
+function setKeyOK() {
+  document.getElementById('key-badge').textContent = 'CONFIGURADA ✓';
+  document.getElementById('key-badge').className = 'key-badge ok';
+  document.getElementById('key-bar').classList.add('ok');
+  document.getElementById('btn-clear').style.display = '';
+}
+function getKey() { return localStorage.getItem('fai_key') || ''; }
+
+// ===== TABS =====
+function goTab(t) {
+  ['upload','facturas'].forEach((id,i) => {
+    document.getElementById('p-'+id).classList.toggle('active', id===t);
+    document.querySelectorAll('.tab')[i].classList.toggle('active', id===t);
+  });
+}
+
+// ===== DRAG & DROP =====
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
+document.getElementById('fi').addEventListener('change', e => addFiles([...e.target.files]));
+
+function addFiles(files) {
+  files.forEach(f => queue.push({ file: f, name: f.name, size: f.size, status: 'waiting' }));
+  renderQueue();
+}
+
+function renderQueue() {
+  const s = document.getElementById('q-section');
+  if (!queue.length) { s.style.display = 'none'; return; }
+  s.style.display = 'block';
+  document.getElementById('q-count').textContent = queue.length;
+  document.getElementById('q-list').innerHTML = queue.map((q, i) => `
+    <div class="q-item ${q.status}">
+      <span>${fIcon(q.name)}</span>
+      <span class="q-name">${q.name}</span>
+      <span class="q-size">${fSize(q.size)}</span>
+      <span class="q-status s-${q.status}">${sLabel(q.status)}</span>
+      ${q.status==='waiting'?`<button class="btn-rm" onclick="rmQ(${i})">×</button>`:''}
+    </div>`).join('');
+}
+
+function fIcon(n) { return /\.pdf$/i.test(n)?'📕':/\.(jpg|jpeg|png|webp)$/i.test(n)?'🖼️':'📝'; }
+function fSize(b) { return b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
+function sLabel(s) { return {waiting:'PENDIENTE',processing:'PROCESANDO...',done:'EXTRAÍDO',error:'ERROR'}[s]||s; }
+function rmQ(i) { queue.splice(i,1); renderQueue(); }
+
+// ===== LOG =====
+function log(msg, type='info') {
+  const box = document.getElementById('log-box');
+  box.classList.add('visible');
+  const line = document.createElement('div');
+  line.className = 'log-line ' + type;
+  line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ===== PROCESS =====
+async function processAll() {
+  const pending = queue.filter(q => q.status === 'waiting');
+  if (!pending.length) return;
+  const key = getKey();
+  if (!key) { toast('⚠️ Introduce y guarda tu API Key primero', 'error'); return; }
+
+  const btn = document.getElementById('btn-proc');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Procesando...';
+  document.getElementById('pb').style.display = 'block';
+
+  let done = 0;
+  for (let i = 0; i < queue.length; i++) {
+    if (queue[i].status !== 'waiting') continue;
+    queue[i].status = 'processing';
+    renderQueue();
+    log('Procesando: ' + queue[i].name, 'info');
+
+    try {
+      const f = await extract(queue[i].file, key);
+      facturas.push(f);
+      queue[i].status = 'done';
+      log('✓ Extraído: ' + queue[i].name, 'ok');
+    } catch(e) {
+      queue[i].status = 'error';
+      log('✗ Error en ' + queue[i].name + ': ' + e.message, 'err');
+      toast('❌ ' + queue[i].name + ': ' + e.message, 'error');
+    }
+    done++;
+    document.getElementById('pf').style.width = (done/pending.length*100)+'%';
+    renderQueue();
+    renderTable();
+    updateStats();
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '⚡ Procesar todo';
+  const ok = queue.filter(q=>q.status==='done').length;
+  if (ok) { toast(`✅ ${ok} factura(s) procesada(s)`, 'success'); setTimeout(()=>goTab('facturas'),1200); }
+}
+
+// ===== EXTRACT =====
+async function extract(file, key) {
+  const b64 = await toB64(file);
+  const isPDF = /\.pdf$/i.test(file.name);
+  const isImg = /\.(jpg|jpeg|png|webp)$/i.test(file.name);
+
+  const prompt = `Eres un extractor de datos contables para España. Analiza la factura y devuelve SOLO este JSON sin markdown:
+{"numero":"nº factura","fecha":"YYYY-MM-DD","proveedor":"nombre","cif":"CIF/NIF","direccion":"dirección","base_imponible":0.00,"iva_porcentaje":21,"iva_euros":0.00,"total":0.00,"cuenta_a3":"600000"}
+Usa null para campos no disponibles.`;
+
+  let content;
+  if (isImg) {
+    content = [
+      { type: "image", source: { type: "base64", media_type: file.type || 'image/jpeg', data: b64 } },
+      { type: "text", text: prompt }
+    ];
+  } else if (isPDF) {
+    content = [
+      { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } },
+      { type: "text", text: prompt }
+    ];
+  } else {
+    content = prompt + '\n\nArchivo: ' + file.name;
+  }
+
+  log('→ Llamando a API Anthropic...', 'info');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      messages: [{ role: 'user', content }]
+    })
+  });
+
+  log('← Respuesta HTTP: ' + res.status, res.ok ? 'ok' : 'err');
+
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e?.error?.message || 'HTTP ' + res.status);
+  }
+
+  const data = await res.json();
+  log('← Contenido recibido, parseando...', 'info');
+
+  const txt = (data.content || []).map(c => c.text || '').join('');
+  const clean = txt.replace(/```json|```/g, '').trim();
+
+  let parsed;
+  try { parsed = JSON.parse(clean); }
+  catch(e) { throw new Error('Respuesta no es JSON válido: ' + txt.slice(0,80)); }
+
+  return {
+    numero: parsed.numero || '',
+    fecha: parsed.fecha || '',
+    proveedor: parsed.proveedor || '',
+    cif: parsed.cif || '',
+    direccion: parsed.direccion || '',
+    base_imponible: parsed.base_imponible ?? '',
+    iva_porcentaje: parsed.iva_porcentaje ?? 21,
+    iva_euros: parsed.iva_euros ?? '',
+    total: parsed.total ?? '',
+    cuenta_a3: parsed.cuenta_a3 || '',
+    _file: file.name
+  };
+}
+
+function toB64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Error leyendo archivo'));
+    r.readAsDataURL(file);
+  });
+}
+
+// ===== TABLE =====
+function renderTable() {
+  const tb = document.getElementById('tbody');
+  if (!facturas.length) {
+    tb.innerHTML = '<tr><td colspan="11"><div class="empty">🗂️ Las facturas procesadas aparecerán aquí</div></td></tr>';
+    document.getElementById('badge').textContent = 0;
+    return;
+  }
+  document.getElementById('badge').textContent = facturas.length;
+  tb.innerHTML = facturas.map((f,i) => `
+    <tr>
+      <td class="mono">${f.numero||'—'}</td>
+      <td class="mono">${f.fecha||'—'}</td>
+      <td>${f.proveedor||'—'}</td>
+      <td class="mono">${f.cif||'—'}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.direccion||'—'}</td>
+      <td class="mono">${eur(f.base_imponible)}</td>
+      <td class="mono">${f.iva_porcentaje??'—'}%</td>
+      <td class="mono">${eur(f.iva_euros)}</td>
+      <td class="mono" style="font-weight:700;color:var(--accent)">${eur(f.total)}</td>
+      <td class="mono">${f.cuenta_a3||'—'}</td>
+      <td><div class="td-actions">
+        <button class="btn-edit" onclick="openEdit(${i})">✏️</button>
+        <button class="btn-del" onclick="delF(${i})">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function eur(v) {
+  if (v===null||v===undefined||v==='') return '—';
+  return parseFloat(v).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+}
+
+function updateStats() {
+  document.getElementById('s-total').textContent = facturas.length;
+  const base = facturas.reduce((s,f)=>s+(parseFloat(f.base_imponible)||0),0);
+  const iva  = facturas.reduce((s,f)=>s+(parseFloat(f.iva_euros)||0),0);
+  document.getElementById('s-base').textContent = base.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  document.getElementById('s-iva').textContent  = iva.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+}
+
+// ===== EDIT =====
+function openEdit(i) {
+  editIdx = i; const f = facturas[i];
+  document.getElementById('e-num').value   = f.numero||'';
+  document.getElementById('e-fecha').value = f.fecha||'';
+  document.getElementById('e-prov').value  = f.proveedor||'';
+  document.getElementById('e-cif').value   = f.cif||'';
+  document.getElementById('e-dir').value   = f.direccion||'';
+  document.getElementById('e-base').value  = f.base_imponible||'';
+  document.getElementById('e-ivap').value  = f.iva_porcentaje||21;
+  document.getElementById('e-ivae').value  = f.iva_euros||'';
+  document.getElementById('e-tot').value   = f.total||'';
+  document.getElementById('e-cta').value   = f.cuenta_a3||'';
+  document.getElementById('m-edit').style.display = 'flex';
+}
+function closeEdit() { document.getElementById('m-edit').style.display='none'; editIdx=null; }
+function saveEdit() {
+  if (editIdx===null) return;
+  facturas[editIdx] = { ...facturas[editIdx],
+    numero: document.getElementById('e-num').value,
+    fecha: document.getElementById('e-fecha').value,
+    proveedor: document.getElementById('e-prov').value,
+    cif: document.getElementById('e-cif').value,
+    direccion: document.getElementById('e-dir').value,
+    base_imponible: parseFloat(document.getElementById('e-base').value)||'',
+    iva_porcentaje: parseFloat(document.getElementById('e-ivap').value)||21,
+    iva_euros: parseFloat(document.getElementById('e-ivae').value)||'',
+    total: parseFloat(document.getElementById('e-tot').value)||'',
+    cuenta_a3: document.getElementById('e-cta').value
+  };
+  closeEdit(); renderTable(); updateStats(); toast('✅ Guardado','success');
+}
+function delF(i) {
+  if (!confirm('¿Eliminar esta factura?')) return;
+  facturas.splice(i,1); renderTable(); updateStats(); toast('🗑️ Eliminada','');
+}
+
+// ===== EXPORT =====
+function exportXLSX() {
+  if (!facturas.length) { toast('⚠️ No hay facturas','error'); return; }
+  const hdr = ['Nº Factura','Fecha','Proveedor','CIF','Dirección','Base Imponible','% IVA','IVA €','Total','Cuenta a3'];
+  const rows = facturas.map(f=>[f.numero,f.fecha,f.proveedor,f.cif,f.direccion,f.base_imponible,f.iva_porcentaje,f.iva_euros,f.total,f.cuenta_a3]);
+  const ws = XLSX.utils.aoa_to_sheet([hdr,...rows]);
+  ws['!cols'] = [12,12,28,14,30,14,8,12,14,14].map(w=>({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Facturas');
+  XLSX.writeFile(wb,'facturas_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('📊 Excel exportado','success');
+}
+function openSheets() {
+  if (!facturas.length) { toast('⚠️ No hay facturas','error'); return; }
+  document.getElementById('m-sheets').style.display='flex';
+}
+function closeSh() { document.getElementById('m-sheets').style.display='none'; }
+function copyTSV() {
+  const hdr = ['Nº Factura','Fecha','Proveedor','CIF','Dirección','Base Imponible','% IVA','IVA €','Total','Cuenta a3'];
+  const rows = facturas.map(f=>[f.numero,f.fecha,f.proveedor,f.cif,f.direccion,f.base_imponible,f.iva_porcentaje,f.iva_euros,f.total,f.cuenta_a3]);
+  const tsv = [hdr,...rows].map(r=>r.map(c=>c??'').join('\t')).join('\n');
+  navigator.clipboard.writeText(tsv).then(()=>{ toast('📋 Copiado — pega en Sheets con Ctrl+Shift+V','success'); closeSh(); }).catch(()=>toast('⚠️ Error al copiar','error'));
+}
+
+// ===== TOAST =====
+function toast(msg, type='') {
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 4000);
+}
+
+// ===== INIT =====
+loadKey();
+renderTable();
+</script>
+</body>
+</html>
