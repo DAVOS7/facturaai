@@ -6,6 +6,7 @@
 <title>FacturaAI — Contabilidad Inteligente</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
 :root {
   --bg: #0e0f11; --surface: #16181c; --surface2: #1e2026; --border: #2a2d35;
@@ -20,47 +21,75 @@ body::before {
   background-size: 40px 40px; pointer-events: none; z-index: 0;
 }
 .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
-header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; }
+header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .logo-mark { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--accent); }
 .logo-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-left: 10px; }
 .header-stats { display: flex; gap: 24px; }
 .stat-num { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--accent); }
 .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-/* API KEY */
-.apikey-bar {
-  background: var(--surface); border: 1px solid var(--accent); border-radius: 10px;
-  padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+/* CONFIG BARS */
+.config-bar {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
-.apikey-bar.ok { border-color: var(--success); }
-.apikey-bar input {
-  flex: 1; min-width: 220px; background: var(--bg); border: 1px solid var(--border);
+.config-bar.highlight { border-color: var(--accent); }
+.config-bar.ok { border-color: var(--success); }
+.bar-icon { font-size: 18px; }
+.bar-info { flex: 1; min-width: 140px; }
+.bar-title { font-size: 13px; font-weight: 600; }
+.bar-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.bar-input {
+  flex: 2; min-width: 220px; background: var(--bg); border: 1px solid var(--border);
   border-radius: 7px; padding: 8px 11px; font-size: 13px; color: var(--text);
   font-family: 'DM Mono', monospace;
 }
-.apikey-bar input:focus { outline: none; border-color: var(--accent); }
-.btn-sm {
-  padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600;
-  cursor: pointer; border: none; transition: all 0.15s;
-}
+.bar-input:focus { outline: none; border-color: var(--accent); }
+.badge-status { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+.badge-status.ok { background: rgba(92,184,92,0.15); color: var(--success); }
+.badge-status.no { background: rgba(232,197,71,0.15); color: var(--accent); }
+.badge-status.info { background: rgba(78,205,196,0.15); color: var(--accent2); }
+
+.btn { padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; white-space: nowrap; }
 .btn-yellow { background: var(--accent); color: #0e0f11; }
 .btn-yellow:hover { background: #f0cf5a; }
-.btn-ghost { background: none; border: 1px solid var(--border) !important; color: var(--text-muted); border: none; }
+.btn-teal { background: var(--accent2); color: #0e0f11; }
+.btn-teal:hover { filter: brightness(1.1); }
+.btn-ghost { background: none; border: 1px solid var(--border) !important; color: var(--text-muted); }
 .btn-ghost:hover { border-color: var(--danger) !important; color: var(--danger); }
-.key-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
-.key-badge.ok { background: rgba(92,184,92,0.15); color: var(--success); }
-.key-badge.no { background: rgba(232,197,71,0.15); color: var(--accent); }
+.btn-outline { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: 7px; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+/* DRIVE SECTION */
+.drive-section {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; margin-bottom: 24px;
+}
+.drive-section-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; }
+.drive-status-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.drive-folder-info { flex: 1; font-size: 13px; color: var(--text-muted); }
+.drive-folder-info strong { color: var(--text); }
+.folder-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; max-height: 200px; overflow-y: auto; }
+.folder-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; transition: all 0.15s;
+}
+.folder-item:hover { border-color: var(--accent2); }
+.folder-item.selected { border-color: var(--accent2); background: rgba(78,205,196,0.08); }
+.folder-icon { font-size: 16px; }
+.folder-name { font-size: 13px; flex: 1; }
+.folder-count { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); }
 
 /* TABS */
 .tabs { display: flex; gap: 2px; background: var(--surface); border-radius: 10px; padding: 4px; margin-bottom: 28px; border: 1px solid var(--border); width: fit-content; }
 .tab { padding: 7px 18px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text-muted); transition: all 0.2s; }
 .tab.active { background: var(--accent); color: #0e0f11; }
-
 .panel { display: none; } .panel.active { display: block; }
 
 /* UPLOAD */
 .drop-zone {
-  border: 2px dashed var(--border); border-radius: 14px; padding: 56px 32px;
+  border: 2px dashed var(--border); border-radius: 14px; padding: 48px 32px;
   text-align: center; cursor: pointer; transition: all 0.3s; background: var(--surface); position: relative; overflow: hidden;
 }
 .drop-zone::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(232,197,71,0.05) 0%, transparent 70%); pointer-events: none; }
@@ -71,12 +100,27 @@ header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bo
 .fmt { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 5px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); letter-spacing: 1px; }
 input[type=file] { display: none; }
 
-.queue-header { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 14px; }
-.queue-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
-.btn-process {
-  background: var(--accent); color: #0e0f11; border: none; padding: 9px 22px;
-  border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.2s;
+/* OR DIVIDER */
+.or-div { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+.or-div::before, .or-div::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.or-div span { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+
+/* DRIVE SYNC BOX */
+.drive-sync-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
 }
+.drive-sync-box.connected { border-color: var(--accent2); }
+.dsb-icon { font-size: 32px; }
+.dsb-info { flex: 1; }
+.dsb-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.dsb-sub { font-size: 12px; color: var(--text-muted); }
+.dsb-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* QUEUE */
+.queue-header { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 12px; }
+.queue-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.btn-process { background: var(--accent); color: #0e0f11; border: none; padding: 9px 22px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.2s; }
 .btn-process:hover { background: #f0cf5a; transform: translateY(-1px); }
 .btn-process:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .progress-bar { height: 2px; background: var(--border); border-radius: 1px; margin-bottom: 12px; overflow: hidden; display: none; }
@@ -88,6 +132,7 @@ input[type=file] { display: none; }
 .q-item.error { border-color: var(--danger); }
 .q-name { font-size: 13px; flex: 1; }
 .q-size { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.q-source { font-family: 'DM Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(78,205,196,0.1); color: var(--accent2); }
 .q-status { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
 .s-waiting { background: var(--surface2); color: var(--text-muted); }
 .s-processing { background: rgba(232,197,71,0.15); color: var(--accent); }
@@ -136,17 +181,14 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
 .btn-cancel { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 18px; border-radius: 7px; font-size: 13px; cursor: pointer; }
 .btn-save { background: var(--accent); color: #0e0f11; border: none; padding: 8px 22px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .btn-save:hover { background: #f0cf5a; }
-
-/* SHEETS MODAL */
 .sheets-info { background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 14px; margin-bottom: 14px; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
 .sheets-info strong { color: var(--accent2); }
 .url-row { display: flex; gap: 7px; margin-top: 10px; }
 .url-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 11px; font-size: 12px; color: var(--text); font-family: 'DM Mono', monospace; }
 .url-input:focus { outline: none; border-color: var(--accent2); }
-.btn-gs { background: var(--accent2); color: #0e0f11; border: none; padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
 /* TOAST */
-.toast { position: fixed; bottom: 28px; right: 28px; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 12px 18px; font-size: 13px; z-index: 200; animation: up 0.25s ease; max-width: 320px; }
+.toast { position: fixed; bottom: 28px; right: 28px; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 12px 18px; font-size: 13px; z-index: 200; animation: up 0.25s ease; max-width: 340px; }
 .toast.success { border-color: var(--success); }
 .toast.error { border-color: var(--danger); }
 
@@ -154,7 +196,6 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
 .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #0e0f11; border-radius: 50%; animation: spin 0.7s linear infinite; }
 .badge { font-family: 'DM Mono', monospace; font-size: 10px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 20px; color: var(--text-muted); margin-left: 6px; }
 
-/* LOG */
 .log-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-top: 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); max-height: 120px; overflow-y: auto; display: none; }
 .log-box.visible { display: block; }
 .log-line.ok { color: var(--success); }
@@ -186,16 +227,30 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
   </header>
 
   <!-- API KEY BAR -->
-  <div class="apikey-bar" id="key-bar">
-    <span>🔑</span>
-    <div style="flex:1;min-width:140px">
-      <div style="font-size:13px;font-weight:600">API Key de Anthropic</div>
-      <div style="font-size:11px;color:var(--text-muted)">Se guarda solo en tu navegador</div>
+  <div class="config-bar" id="key-bar">
+    <span class="bar-icon">🔑</span>
+    <div class="bar-info">
+      <div class="bar-title">API Key de Anthropic</div>
+      <div class="bar-sub">Para la extracción automática con IA</div>
     </div>
-    <input type="password" id="key-input" placeholder="sk-ant-api03-...">
-    <button class="btn-sm btn-yellow" onclick="saveKey()">Guardar</button>
-    <button class="btn-sm btn-ghost" id="btn-clear" onclick="clearKey()" style="display:none;border:1px solid var(--border)">✕ Borrar</button>
-    <span class="key-badge no" id="key-badge">SIN CONFIGURAR</span>
+    <input type="password" class="bar-input" id="key-input" placeholder="sk-ant-api03-...">
+    <button class="btn btn-yellow" onclick="saveKey()">Guardar</button>
+    <button class="btn btn-ghost" id="btn-clear-key" onclick="clearKey()" style="display:none">✕</button>
+    <span class="badge-status no" id="key-badge">SIN CONFIGURAR</span>
+  </div>
+
+  <!-- GOOGLE DRIVE BAR -->
+  <div class="config-bar" id="drive-bar">
+    <span class="bar-icon">📁</span>
+    <div class="bar-info">
+      <div class="bar-title">Google Drive</div>
+      <div class="bar-sub" id="drive-bar-sub">Conecta tu cuenta para sincronizar facturas automáticamente</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-teal" id="btn-drive-connect" onclick="connectDrive()">Conectar cuenta Google</button>
+      <button class="btn btn-ghost" id="btn-drive-disconnect" onclick="disconnectDrive()" style="display:none">Desconectar</button>
+    </div>
+    <span class="badge-status no" id="drive-badge">NO CONECTADO</span>
   </div>
 
   <!-- TABS -->
@@ -206,8 +261,39 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
 
   <!-- UPLOAD PANEL -->
   <div class="panel active" id="p-upload">
+
+    <!-- DRIVE SYNC BOX -->
+    <div class="drive-sync-box" id="drive-sync-box">
+      <div class="dsb-icon">☁️</div>
+      <div class="dsb-info">
+        <div class="dsb-title" id="dsb-title">Google Drive no conectado</div>
+        <div class="dsb-sub" id="dsb-sub">Conecta tu cuenta arriba para sincronizar facturas directamente desde Drive</div>
+      </div>
+      <div class="dsb-actions" id="dsb-actions">
+        <button class="btn-outline" onclick="connectDrive()">Conectar Drive →</button>
+      </div>
+    </div>
+
+    <!-- FOLDER PICKER (oculto hasta conectar) -->
+    <div id="folder-picker" style="display:none;margin-top:16px">
+      <div class="drive-section">
+        <div class="drive-section-title">📂 Selecciona tu carpeta de facturas</div>
+        <div class="folder-list" id="folder-list">
+          <div style="color:var(--text-muted);font-size:13px;padding:8px">Cargando carpetas...</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span id="selected-folder-label" style="font-size:12px;color:var(--text-muted)">Ninguna carpeta seleccionada</span>
+          <button class="btn btn-yellow" onclick="syncFromDrive()" id="btn-sync" style="display:none">
+            🔄 Sincronizar facturas nuevas
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="or-div"><span>O SUBE MANUALMENTE</span></div>
+
     <div class="drop-zone" id="dropzone" onclick="document.getElementById('fi').click()">
-      <div style="font-size:44px">📄</div>
+      <div style="font-size:40px">📄</div>
       <div class="drop-title">Arrastra aquí tus facturas</div>
       <div class="drop-sub">o haz clic para seleccionar archivos</div>
       <div class="fmt-badges">
@@ -218,7 +304,7 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
 
     <div id="q-section" style="display:none">
       <div class="queue-header">
-        <span class="queue-title">Cola (<span id="q-count">0</span> archivos)</span>
+        <span class="queue-title">Cola de procesado (<span id="q-count">0</span> archivos)</span>
         <button class="btn-process" id="btn-proc" onclick="processAll()">⚡ Procesar todo</button>
       </div>
       <div class="progress-bar" id="pb"><div class="progress-fill" id="pf" style="width:0%"></div></div>
@@ -233,7 +319,7 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
       <span class="tbl-title">Registro de facturas</span>
       <div class="export-group">
         <button class="btn-export" onclick="exportXLSX()">📊 Excel (.xlsx)</button>
-        <button class="btn-export gs" onclick="openSheets()">🟢 Google Sheets</button>
+        <button class="btn-export gs" onclick="openSheetsMdl()">🟢 Google Sheets</button>
       </div>
     </div>
     <div class="tbl-wrap">
@@ -241,7 +327,7 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
         <thead><tr>
           <th>Nº Factura</th><th>Fecha</th><th>Proveedor</th><th>CIF</th>
           <th>Dirección</th><th>Base Imp.</th><th>IVA %</th><th>IVA €</th>
-          <th>Total</th><th>Cta. a3</th><th></th>
+          <th>Total</th><th>Cta. a3</th><th>Fuente</th><th></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -283,7 +369,7 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
         Pulsa <strong>Copiar datos TSV</strong>, luego abre tu Google Sheet y pega con <strong>Ctrl+Shift+V</strong> para importar como tabla.
         <div class="url-row">
           <input class="url-input" id="sh-url" placeholder="https://docs.google.com/spreadsheets/d/...">
-          <button class="btn-gs" onclick="window.open(document.getElementById('sh-url').value,'_blank')">Abrir →</button>
+          <button class="btn btn-teal" onclick="window.open(document.getElementById('sh-url').value,'_blank')">Abrir →</button>
         </div>
       </div>
     </div>
@@ -295,16 +381,18 @@ td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
 </div>
 
 <script>
+const GOOGLE_CLIENT_ID = '16873040089-t63ama0nha38jr7oonlebhcfrhrcf00a.apps.googleusercontent.com';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+
 // ===== STATE =====
 let queue = [], facturas = [], editIdx = null;
+let driveToken = null, selectedFolderId = null, selectedFolderName = null;
+let processedFileIds = new Set();
 
 // ===== API KEY =====
 function loadKey() {
   const k = localStorage.getItem('fai_key') || '';
-  if (k) {
-    document.getElementById('key-input').value = k;
-    setKeyOK();
-  }
+  if (k) { document.getElementById('key-input').value = k; setKeyOK(); }
 }
 function saveKey() {
   const v = document.getElementById('key-input').value.trim();
@@ -317,17 +405,183 @@ function clearKey() {
   localStorage.removeItem('fai_key');
   document.getElementById('key-input').value = '';
   document.getElementById('key-badge').textContent = 'SIN CONFIGURAR';
-  document.getElementById('key-badge').className = 'key-badge no';
+  document.getElementById('key-badge').className = 'badge-status no';
   document.getElementById('key-bar').classList.remove('ok');
-  document.getElementById('btn-clear').style.display = 'none';
+  document.getElementById('btn-clear-key').style.display = 'none';
 }
 function setKeyOK() {
   document.getElementById('key-badge').textContent = 'CONFIGURADA ✓';
-  document.getElementById('key-badge').className = 'key-badge ok';
+  document.getElementById('key-badge').className = 'badge-status ok';
   document.getElementById('key-bar').classList.add('ok');
-  document.getElementById('btn-clear').style.display = '';
+  document.getElementById('btn-clear-key').style.display = '';
 }
 function getKey() { return localStorage.getItem('fai_key') || ''; }
+
+// ===== GOOGLE DRIVE AUTH =====
+function loadGoogleScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.accounts) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('No se pudo cargar el script de Google'));
+    document.head.appendChild(s);
+  });
+}
+
+async function connectDrive() {
+  const btn = document.getElementById('btn-drive-connect');
+  btn.disabled = true;
+  btn.textContent = 'Cargando...';
+  try {
+    await loadGoogleScript();
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: DRIVE_SCOPE,
+      callback: (resp) => {
+        if (resp.error) { toast('❌ Error: ' + resp.error, 'error'); btn.disabled=false; btn.textContent='Conectar cuenta Google'; return; }
+        driveToken = resp.access_token;
+        setDriveConnected();
+        loadFolders();
+      }
+    });
+    client.requestAccessToken();
+  } catch(e) {
+    toast('❌ ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Conectar cuenta Google';
+}
+
+function disconnectDrive() {
+  driveToken = null; selectedFolderId = null; selectedFolderName = null;
+  document.getElementById('drive-badge').textContent = 'NO CONECTADO';
+  document.getElementById('drive-badge').className = 'badge-status no';
+  document.getElementById('drive-bar').classList.remove('ok');
+  document.getElementById('btn-drive-connect').style.display = '';
+  document.getElementById('btn-drive-disconnect').style.display = 'none';
+  document.getElementById('drive-bar-sub').textContent = 'Conecta tu cuenta para sincronizar facturas automáticamente';
+  document.getElementById('drive-sync-box').classList.remove('connected');
+  document.getElementById('dsb-title').textContent = 'Google Drive no conectado';
+  document.getElementById('dsb-sub').textContent = 'Conecta tu cuenta arriba para sincronizar facturas directamente desde Drive';
+  document.getElementById('dsb-actions').innerHTML = '<button class="btn-outline" onclick="connectDrive()">Conectar Drive →</button>';
+  document.getElementById('folder-picker').style.display = 'none';
+}
+
+function setDriveConnected() {
+  document.getElementById('drive-badge').textContent = 'CONECTADO ✓';
+  document.getElementById('drive-badge').className = 'badge-status ok';
+  document.getElementById('drive-bar').classList.add('ok');
+  document.getElementById('btn-drive-connect').style.display = 'none';
+  document.getElementById('btn-drive-disconnect').style.display = '';
+  document.getElementById('drive-bar-sub').textContent = 'Cuenta conectada — selecciona la carpeta de facturas';
+  document.getElementById('drive-sync-box').classList.add('connected');
+  document.getElementById('dsb-title').textContent = '☁️ Google Drive conectado';
+  document.getElementById('dsb-sub').textContent = 'Selecciona tu carpeta de facturas en el panel de abajo';
+  document.getElementById('dsb-actions').innerHTML = '';
+  document.getElementById('folder-picker').style.display = 'block';
+  toast('✅ Google Drive conectado', 'success');
+}
+
+// ===== LOAD FOLDERS =====
+async function loadFolders() {
+  const fl = document.getElementById('folder-list');
+  fl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px">Cargando carpetas...</div>';
+  try {
+    const url = `https://www.googleapis.com/drive/v3/files?q=mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name,modifiedTime)&orderBy=name&pageSize=50`;
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + driveToken } });
+    const data = await res.json();
+    if (!data.files || !data.files.length) {
+      fl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px">No se encontraron carpetas</div>';
+      return;
+    }
+    fl.innerHTML = data.files.map(f => `
+      <div class="folder-item" id="fi-${f.id}" onclick="selectFolder('${f.id}','${escJs(f.name)}')">
+        <span class="folder-icon">📁</span>
+        <span class="folder-name">${f.name}</span>
+      </div>`).join('');
+  } catch(e) {
+    fl.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:8px">Error cargando carpetas: ' + e.message + '</div>';
+  }
+}
+
+function escJs(s) { return s.replace(/'/g,"\\\'").replace(/"/g,"\\\""); }
+
+function selectFolder(id, name) {
+  selectedFolderId = id;
+  selectedFolderName = name;
+  document.querySelectorAll('.folder-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('fi-'+id)?.classList.add('selected');
+  document.getElementById('selected-folder-label').textContent = '📂 Carpeta seleccionada: ' + name;
+  document.getElementById('selected-folder-label').style.color = 'var(--accent2)';
+  document.getElementById('btn-sync').style.display = '';
+  document.getElementById('dsb-sub').textContent = 'Carpeta: ' + name + ' — pulsa Sincronizar para cargar facturas nuevas';
+  toast('📂 Carpeta seleccionada: ' + name, 'success');
+}
+
+// ===== SYNC FROM DRIVE =====
+async function syncFromDrive() {
+  if (!driveToken) { toast('⚠️ Conecta Google Drive primero', 'error'); return; }
+  if (!selectedFolderId) { toast('⚠️ Selecciona una carpeta primero', 'error'); return; }
+  if (!getKey()) { toast('⚠️ Configura tu API Key primero', 'error'); return; }
+
+  const btn = document.getElementById('btn-sync');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin" style="border-top-color:#0e0f11"></span> Buscando...';
+
+  try {
+    const mimes = [
+      "mimeType='application/pdf'",
+      "mimeType='image/jpeg'",
+      "mimeType='image/png'",
+      "mimeType='image/webp'",
+      "mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document'"
+    ].join(' or ');
+
+    const url = `https://www.googleapis.com/drive/v3/files?q=(${mimes}) and '${selectedFolderId}' in parents and trashed=false&fields=files(id,name,size,mimeType,modifiedTime)&orderBy=modifiedTime desc&pageSize=100`;
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + driveToken } });
+    const data = await res.json();
+
+    if (!data.files || !data.files.length) {
+      toast('ℹ️ No se encontraron archivos en esa carpeta', '');
+      btn.disabled = false; btn.innerHTML = '🔄 Sincronizar facturas nuevas';
+      return;
+    }
+
+    // Filtrar solo los no procesados aún
+    const nuevos = data.files.filter(f => !processedFileIds.has(f.id));
+    if (!nuevos.length) {
+      toast('✅ Todo al día — no hay facturas nuevas', 'success');
+      btn.disabled = false; btn.innerHTML = '🔄 Sincronizar facturas nuevas';
+      return;
+    }
+
+    toast(`📥 ${nuevos.length} factura(s) nueva(s) encontrada(s) — añadiendo a la cola...`, 'success');
+
+    // Descargar y añadir a la cola
+    for (const f of nuevos) {
+      try {
+        const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`, {
+          headers: { Authorization: 'Bearer ' + driveToken }
+        });
+        const blob = await fileRes.blob();
+        const file = new File([blob], f.name, { type: f.mimeType });
+        queue.push({ file, name: f.name, size: file.size, status: 'waiting', source: 'drive', driveId: f.id });
+      } catch(e) {
+        log('✗ Error descargando ' + f.name + ': ' + e.message, 'err');
+      }
+    }
+
+    renderQueue();
+    document.getElementById('q-section').style.display = 'block';
+
+  } catch(e) {
+    toast('❌ Error sincronizando: ' + e.message, 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔄 Sincronizar facturas nuevas';
+}
 
 // ===== TABS =====
 function goTab(t) {
@@ -345,20 +599,19 @@ dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over
 document.getElementById('fi').addEventListener('change', e => addFiles([...e.target.files]));
 
 function addFiles(files) {
-  files.forEach(f => queue.push({ file: f, name: f.name, size: f.size, status: 'waiting' }));
+  files.forEach(f => queue.push({ file: f, name: f.name, size: f.size, status: 'waiting', source: 'manual' }));
   renderQueue();
+  document.getElementById('q-section').style.display = 'block';
 }
 
 function renderQueue() {
-  const s = document.getElementById('q-section');
-  if (!queue.length) { s.style.display = 'none'; return; }
-  s.style.display = 'block';
   document.getElementById('q-count').textContent = queue.length;
   document.getElementById('q-list').innerHTML = queue.map((q, i) => `
     <div class="q-item ${q.status}">
       <span>${fIcon(q.name)}</span>
       <span class="q-name">${q.name}</span>
       <span class="q-size">${fSize(q.size)}</span>
+      ${q.source==='drive'?'<span class="q-source">DRIVE</span>':''}
       <span class="q-status s-${q.status}">${sLabel(q.status)}</span>
       ${q.status==='waiting'?`<button class="btn-rm" onclick="rmQ(${i})">×</button>`:''}
     </div>`).join('');
@@ -380,12 +633,12 @@ function log(msg, type='info') {
   box.scrollTop = box.scrollHeight;
 }
 
-// ===== PROCESS =====
+// ===== PROCESS ALL =====
 async function processAll() {
   const pending = queue.filter(q => q.status === 'waiting');
   if (!pending.length) return;
   const key = getKey();
-  if (!key) { toast('⚠️ Introduce y guarda tu API Key primero', 'error'); return; }
+  if (!key) { toast('⚠️ Configura tu API Key primero', 'error'); return; }
 
   const btn = document.getElementById('btn-proc');
   btn.disabled = true;
@@ -398,11 +651,12 @@ async function processAll() {
     queue[i].status = 'processing';
     renderQueue();
     log('Procesando: ' + queue[i].name, 'info');
-
     try {
       const f = await extract(queue[i].file, key);
       facturas.push(f);
       queue[i].status = 'done';
+      // Marcar como procesado en Drive
+      if (queue[i].driveId) processedFileIds.add(queue[i].driveId);
       log('✓ Extraído: ' + queue[i].name, 'ok');
     } catch(e) {
       queue[i].status = 'error';
@@ -447,8 +701,7 @@ Usa null para campos no disponibles.`;
     content = prompt + '\n\nArchivo: ' + file.name;
   }
 
-  log('→ Llamando a API Anthropic...', 'info');
-
+  log('→ Llamando API...', 'info');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -464,22 +717,18 @@ Usa null para campos no disponibles.`;
     })
   });
 
-  log('← Respuesta HTTP: ' + res.status, res.ok ? 'ok' : 'err');
-
+  log('← HTTP ' + res.status, res.ok ? 'ok' : 'err');
   if (!res.ok) {
     const e = await res.json().catch(() => ({}));
     throw new Error(e?.error?.message || 'HTTP ' + res.status);
   }
 
   const data = await res.json();
-  log('← Contenido recibido, parseando...', 'info');
-
   const txt = (data.content || []).map(c => c.text || '').join('');
   const clean = txt.replace(/```json|```/g, '').trim();
-
   let parsed;
   try { parsed = JSON.parse(clean); }
-  catch(e) { throw new Error('Respuesta no es JSON válido: ' + txt.slice(0,80)); }
+  catch(e) { throw new Error('JSON inválido: ' + txt.slice(0,60)); }
 
   return {
     numero: parsed.numero || '',
@@ -492,7 +741,8 @@ Usa null para campos no disponibles.`;
     iva_euros: parsed.iva_euros ?? '',
     total: parsed.total ?? '',
     cuenta_a3: parsed.cuenta_a3 || '',
-    _file: file.name
+    _file: file.name,
+    _source: 'drive'
   };
 }
 
@@ -508,12 +758,11 @@ function toB64(file) {
 // ===== TABLE =====
 function renderTable() {
   const tb = document.getElementById('tbody');
+  document.getElementById('badge').textContent = facturas.length;
   if (!facturas.length) {
-    tb.innerHTML = '<tr><td colspan="11"><div class="empty">🗂️ Las facturas procesadas aparecerán aquí</div></td></tr>';
-    document.getElementById('badge').textContent = 0;
+    tb.innerHTML = '<tr><td colspan="12"><div class="empty">🗂️ Las facturas procesadas aparecerán aquí</div></td></tr>';
     return;
   }
-  document.getElementById('badge').textContent = facturas.length;
   tb.innerHTML = facturas.map((f,i) => `
     <tr>
       <td class="mono">${f.numero||'—'}</td>
@@ -526,6 +775,7 @@ function renderTable() {
       <td class="mono">${eur(f.iva_euros)}</td>
       <td class="mono" style="font-weight:700;color:var(--accent)">${eur(f.total)}</td>
       <td class="mono">${f.cuenta_a3||'—'}</td>
+      <td><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted)">${f._source==='drive'?'☁️ Drive':'📁 Manual'}</span></td>
       <td><div class="td-actions">
         <button class="btn-edit" onclick="openEdit(${i})">✏️</button>
         <button class="btn-del" onclick="delF(${i})">🗑️</button>
@@ -537,7 +787,6 @@ function eur(v) {
   if (v===null||v===undefined||v==='') return '—';
   return parseFloat(v).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 }
-
 function updateStats() {
   document.getElementById('s-total').textContent = facturas.length;
   const base = facturas.reduce((s,f)=>s+(parseFloat(f.base_imponible)||0),0);
@@ -595,7 +844,7 @@ function exportXLSX() {
   XLSX.writeFile(wb,'facturas_'+new Date().toISOString().split('T')[0]+'.xlsx');
   toast('📊 Excel exportado','success');
 }
-function openSheets() {
+function openSheetsMdl() {
   if (!facturas.length) { toast('⚠️ No hay facturas','error'); return; }
   document.getElementById('m-sheets').style.display='flex';
 }
