@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FacturaAI v2 — OhanaGroup SL</title>
@@ -728,7 +728,7 @@ async function extract(file,key){
   else if(isPDF){parts.push({inline_data:{mime_type:'application/pdf',data:b64}});parts.push({text:prompt});}
   else{parts.push({text:prompt+'\n\nArchivo: '+file.name});}
   log('Llamando Gemini...','info');
-  const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash:generateContent?key='+key,{
+  const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({contents:[{parts}],generationConfig:{temperature:0,maxOutputTokens:1024}})
   });
